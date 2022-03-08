@@ -1,0 +1,30 @@
+version: '3.7'
+services:
+  xrdp:
+    container_name: ${COMPOSE_PROJECT_NAME}
+    build: ./images/${SYSTEM_DISTRIBUTION:-ubuntu}/${SYSTEM_VERSION:-20.04}/.
+    image: ${SYSTEM_DISTRIBUTION:-ubuntu}${SYSTEM_VERSION:-20.04}-xrdp
+    restart: always
+    hostname: ${HOSTNAME:-terminalserver}
+    shm_size: ${SHM_SIZE:-4g}
+    cap_add:
+      - SYS_ADMIN
+    devices:
+      - "/dev/fuse:/dev/fuse"
+    ports:
+      - "${XRDP_PORT:-3389}:3389"
+      - "${SSH_PORT:-2222}:22"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./assets/etc/xrdp/xrdp.ini:/etc/xrdp/xrdp.ini
+      - ./data/ssh:/etc/ssh/
+      - ./data/home:/home:rw
+      - ./assets/ssh_user_orig:/ssh_user_orig:ro
+      - ./assets/usr/share/backgrounds/default.png:/usr/share/backgrounds/ubuntu-mate-common/Green-Wall-Logo.png:ro
+      - ./assets/usr/share/xrdp/abstergo.bmp:/usr/share/xrdp/abstergo.bmp
+      - ./assets/etc/user_source.csv:/etc/user_source.csv:ro
+    env_file:
+      - .env
+    environment:
+      PASSWORDHASH: ${PASSWORDHASH:-$1$mmPfWxGC$Y.ZHgORnD1ote/3v2OxnI0}
+      IDLETIME: ${IDLETIME:-11}

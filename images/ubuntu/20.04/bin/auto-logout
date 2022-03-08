@@ -1,0 +1,8 @@
+#!/bin/sh
+if [ $IDLETIME ]; then
+    xautolock -time $IDLETIME -locker /usr/bin/mate-logout
+elif [ $LOCKTIME ]; then
+    xautolock -time $LOCKTIME -locker /usr/bin/mate-logout
+else
+    xautolock -time 10 -locker /usr/bin/mate-logout
+fi
