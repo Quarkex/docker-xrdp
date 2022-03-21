@@ -13,8 +13,36 @@ ENV BUILD_DEPS="git autoconf pkg-config libssl-dev libpam0g-dev \
     xserver-xorg-dev wget ssl-cert \
     libmp3lame0 libmp3lame-dev libfdk-aac-dev libjpeg-dev libopus-dev \
     libturbojpeg0-dev"
-RUN apt update && apt -y full-upgrade && apt install -y sudo apt-utils software-properties-common $BUILD_DEPS
+ENV KITTY_DEPS="\
+    python3.8 \
+    libharfbuzz-dev \
+    zlib1g \
+    libpng16-16 \
+    liblcms2-2 \
+    librsync-dev \
+    libfreetype-dev \
+    libfontconfig1-dev \
+    libcanberra-dev \
+    imagemagick \
+    python3-pygments"
+ENV KITTY_BUILD_DEPS="\
+    libdbus-1-dev \
+    libfontconfig-dev \
+    libgl1-mesa-dev \
+    liblcms2-dev \
+    libx11-xcb-dev \
+    libxcursor-dev \
+    libxi-dev \
+    libxinerama-dev \
+    libxkbcommon-x11-dev \
+    libxrandr-dev \
+    pkg-config \
+    libpython3-dev \
+    librsync-dev"
+RUN apt update && apt -y full-upgrade && apt install -y sudo apt-utils software-properties-common $BUILD_DEPS $KITTY_DEPS $KITTY_BUILD_DEPS
 
+# Build kitty
+RUN git clone --recursive https://github.com/kovidgoyal/kitty /opt/kitty && cd /opt/kitty  && make
 
 # Build xrdp
 
@@ -50,6 +78,18 @@ RUN mkdir -p /tmp/so
 RUN cp src/.libs/*.so /tmp/so
 
 FROM ubuntu:20.04
+ENV KITTY_DEPS="\
+    python3.8 \
+    libharfbuzz-dev \
+    zlib1g \
+    libpng16-16 \
+    liblcms2-2 \
+    librsync-dev \
+    libfreetype-dev \
+    libfontconfig1-dev \
+    libcanberra-dev \
+    imagemagick \
+    python3-pygments"
 ARG ADDITIONAL_PACKAGES=""
 ENV ADDITIONAL_PACKAGES=${ADDITIONAL_PACKAGES}
 ENV DEBIAN_FRONTEND noninteractive
@@ -93,6 +133,7 @@ RUN echo "Installing packages" \
   gnome-user-docs-es \
   language-pack-gnome-es \
   wspanish \
+  $KITTY_DEPS \
   $ADDITIONAL_PACKAGES \
   && \
   apt remove -y light-locker && \
@@ -104,6 +145,21 @@ RUN echo "Installing packages" \
   rm -rf /var/cache/apt /var/lib/apt/lists && \
   adduser xrdp ssl-cert  && \
   mkdir -p /var/lib/xrdp-pulseaudio-installer
+COPY --from=builder /opt/kitty /opt/kitty
+RUN ln -s /opt/kitty/kitty/launcher/kitty /usr/local/bin/kitty \
+  && echo '\
+[Desktop Entry]\n\
+Name=Kitty\n\
+Exec=/opt/kitty/kitty/launcher/kitty\n\
+Icon=utilities-terminal\n\
+Terminal=false\n\
+Type=Application\n\
+Categories=System;Utility;TerminalEmulator;' > /usr/share/applications/kitty.desktop \
+  && update-alternatives \
+    --install /usr/bin/x-terminal-emulator \
+    x-terminal-emulator \
+    /opt/kitty/kitty/launcher/kitty \
+    40
 COPY --from=builder /tmp/so/module-xrdp-source.so /var/lib/xrdp-pulseaudio-installer
 COPY --from=builder /tmp/so/module-xrdp-sink.so /var/lib/xrdp-pulseaudio-installer
 ADD bin /usr/bin
@@ -145,6 +201,22 @@ ENV LANGUAGE=es_ES:es
 ENV LC_ALL=es_ES.UTF-8
 
 RUN sed -i '5s#$#\nif [[ -f /etc/bash_aliases ]]; then\n  . /etc/bash_aliases\nfi\nif [[ -d /etc/bash_aliases.d ]]; then\n  if ls /etc/bash_aliases.d/*.sh &>/dev/null; then\n    for alias_source_file in /etc/bash_aliases.d/*.sh; do\n      . "$alias_source_file"\n    done\n  fi\nfi\n#' /etc/bash.bashrc
+RUN echo "\
+alias ssh='kitty +kitten ssh'\n\
+" > /etc/bash_aliases
+
+COPY fonts/* /usr/share/fonts/truetype/
+RUN echo '\
+<?xml version="1.0"?>\n\
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">\n\
+<fontconfig>\n\
+  <alias>\n\
+    <family>monospace</family>\n\
+    <prefer><family>JetBrainsMono</family></prefer>\n\
+  </alias>\n\
+</fontconfig>\
+' > /etc/fonts/local.conf
+
 RUN echo '\
 user-db:user\n\
 system-db:local' > /etc/dconf/profile/user \
@@ -167,6 +239,12 @@ lock-blank-screen=false\n\
 lock-hibernate=false\n\
 lock-suspend=false\n\
 lock-use-screensaver=false' > /etc/dconf/db/local.d/01-mate-power-manager \
+  && echo '\
+[org/mate/desktop/interface]\n\
+monospace-font-name="JetBrainsMono 12"' > /etc/dconf/db/local.d/01-mate-interface \
+  && echo '\
+[org/gnome/desktop/interface]\n\
+monospace-font-name="JetBrainsMono 12"' > /etc/dconf/db/local.d/01-gnome-interface \
   && echo '\
 [apps/indicator-session]\n\
 user-show-menu=false\n\
