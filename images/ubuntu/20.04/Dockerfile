@@ -145,6 +145,35 @@ ENV LANGUAGE=es_ES:es
 ENV LC_ALL=es_ES.UTF-8
 
 RUN sed -i '5s#$#\nif [[ -f /etc/bash_aliases ]]; then\n  . /etc/bash_aliases\nfi\nif [[ -d /etc/bash_aliases.d ]]; then\n  if ls /etc/bash_aliases.d/*.sh &>/dev/null; then\n    for alias_source_file in /etc/bash_aliases.d/*.sh; do\n      . "$alias_source_file"\n    done\n  fi\nfi\n#' /etc/bash.bashrc
+RUN echo '\
+user-db:user\n\
+system-db:local' > /etc/dconf/profile/user \
+  && mkdir -p /etc/dconf/db/local.d \
+  && echo '\
+[org/mate/desktop/session]\n\
+logout-prompt=false' > /etc/dconf/db/local.d/01-mate-session \
+  && echo '\
+[org/gnome/desktop/lockdown]\n\
+disable-lock-screen=true\n\
+user-administration-disabled=true\n\
+disable-user-switching=true' > /etc/dconf/db/local.d/01-gnome-lockdown \
+  && echo '\
+[org/mate/desktop/lockdown]\n\
+disable-lock-screen=true\n\
+disable-user-switching=true' > /etc/dconf/db/local.d/01-mate-lockdown \
+  && echo '\
+[org/mate/power-manager]\n\
+lock-blank-screen=false\n\
+lock-hibernate=false\n\
+lock-suspend=false\n\
+lock-use-screensaver=false' > /etc/dconf/db/local.d/01-mate-power-manager \
+  && echo '\
+[apps/indicator-session]\n\
+user-show-menu=false\n\
+suppress-logot-restart-shutdown=true\n\
+suppress-restart-menuitem=true\n\
+suppress-shutdown-menuitem=true' > /etc/dconf/db/local.d/01-indicator-session \
+  && dconf update
 
 # Docker config
 VOLUME ["/etc/ssh","/home"]
