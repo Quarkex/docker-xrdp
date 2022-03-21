@@ -7,7 +7,7 @@ services:
       args:
         ADDITIONAL_PACKAGES: ${ADDITIONAL_PACKAGES}
     image: ${SYSTEM_DISTRIBUTION:-ubuntu}${SYSTEM_VERSION:-20.04}-xrdp
-    restart: always
+    restart: unless-stopped
     hostname: ${HOSTNAME:-terminalserver}
     shm_size: ${SHM_SIZE:-4g}
     cap_add:
