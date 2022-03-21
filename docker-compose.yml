@@ -2,7 +2,10 @@ version: '3.7'
 services:
   xrdp:
     container_name: ${COMPOSE_PROJECT_NAME}
-    build: ./images/${SYSTEM_DISTRIBUTION:-ubuntu}/${SYSTEM_VERSION:-20.04}/.
+    build:
+      context: ./images/${SYSTEM_DISTRIBUTION:-ubuntu}/${SYSTEM_VERSION:-20.04}/.
+      args:
+        ADDITIONAL_PACKAGES: ${ADDITIONAL_PACKAGES}
     image: ${SYSTEM_DISTRIBUTION:-ubuntu}${SYSTEM_VERSION:-20.04}-xrdp
     restart: always
     hostname: ${HOSTNAME:-terminalserver}
