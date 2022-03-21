@@ -19,6 +19,10 @@ services:
       - "${SSH_PORT:-2222}:22"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/sudoers.d:/etc/sudoers.d:ro
+      - /etc/bash_aliases.d:/etc/bash_aliases.d:ro
+      - /etc/tmux.conf:/etc/tmux.conf:ro
+      - /etc/tmux.d:/etc/tmux.d:ro
       - ./assets/etc/xrdp/xrdp.ini:/etc/xrdp/xrdp.ini
       - ./data/ssh:/etc/ssh/
       - ./data/home:/home:rw
