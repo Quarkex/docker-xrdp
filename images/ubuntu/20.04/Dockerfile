@@ -62,6 +62,7 @@ COPY packages /tmp/packages/
 RUN echo "Installing packages" \
   && echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections \
   && apt update && apt -y full-upgrade && apt install -y \
+  linux-tools-generic \
   sshfs \
   apt-transport-https \
   libgconf-2-4 \
@@ -142,6 +143,8 @@ RUN mkdir /var/run/dbus && \
 ENV LANG=es_ES.UTF-8
 ENV LANGUAGE=es_ES:es
 ENV LC_ALL=es_ES.UTF-8
+
+RUN sed -i '5s#$#\nif [[ -f /etc/bash_aliases ]]; then\n  . /etc/bash_aliases\nfi\nif [[ -d /etc/bash_aliases.d ]]; then\n  if ls /etc/bash_aliases.d/*.sh &>/dev/null; then\n    for alias_source_file in /etc/bash_aliases.d/*.sh; do\n      . "$alias_source_file"\n    done\n  fi\nfi\n#' /etc/bash.bashrc
 
 # Docker config
 VOLUME ["/etc/ssh","/home"]
